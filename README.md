@@ -39,28 +39,36 @@ No grants file is needed: no mediated capability and no storage are used.
 
 ## Usage
 
-| Command | Effect |
-|---|---|
-| `/caveman on` | apply the voice, badge `caveman on` |
-| `/caveman off` | drop it, badge cleared |
-| `/caveman status` | report the mode |
-| `/caveman ultracave` | on, fragments only |
-| `/caveman megacave` | on, Classical Chinese style |
-| `/caveman jev on\|off\|status` | decision layer |
-| `/caveman key <sk-or-…>` · `key` · `key clear` | store/show(masked)/drop the API key |
-| `/caveman model [list\|<id>]` | list or choose the decision model |
-| `/caveman endpoint [<url>\|reset]` | point at any OpenAI-compatible endpoint |
+`/caveman` (or `/caveman help`) opens a text wizard in the footer:
 
-Spoken phrases work too and do not need a slash: "stop caveman", "normal mode",
+```
+1on 2off 3st 4cav 5ultra 6mega · 7jev+ 8jev- 9key- 10ls 11url 12key+ q
+```
+
+Type the number; the footer repaints with the new state and nothing is sent to
+the model. `q` closes, any other text closes the menu and goes through as a
+normal message. Prompts (`key`, `endpoint`, model pick) consume the next line
+and stay open on a bad value, showing the reason inline; `c` cancels the prompt.
+The menu expires after 120 s.
+
+| Pick | Action | Pick | Action |
+|---|---|---|---|
+| 1 | voice on | 7 | jev on |
+| 2 | voice off | 8 | jev off |
+| 3 | status | 9 | clear key |
+| 4 / 5 / 6 | level caveman / ultracave / megacave | 10 | list models |
+| 11 | set endpoint | 12 | set key |
+
+Direct verbs still work without the menu: `/caveman on`, `/caveman off`,
+`/caveman status`, `/caveman caveman|ultracave|megacave`, `/caveman jev on|off`,
+`/caveman key <k>|clear`, `/caveman model [list|<id>]`, `/caveman endpoint [<url>|reset]`.
+
+Spoken phrases work too and never need a slash: "stop caveman", "normal mode",
 "talk like caveman", "be brief". A loose phrase ("pode voltar ao modo normal?")
 is disambiguated by the decision model before it is acted on.
 
-The skills also self-trigger on phrasing: "talk like caveman", "be brief",
-"less tokens", "caveman mode". `stop caveman` and `normal mode` end it in
-conversation.
-
-State lives in the process: `/caveman off` lasts until restart, and the
-`alwaysOn` config is the boot default.
+Every change is persisted to the state file, so the mode, level and `jev` switch
+survive a restart.
 
 ## Decision model (optional)
 

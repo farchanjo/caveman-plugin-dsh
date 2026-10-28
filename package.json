@@ -1,6 +1,6 @@
 {
   "name": "caveman-plugin-dsh",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Caveman voice for DSH (terminal and web): terse replies via bundled skills, a /caveman toggle and a TUI badge. Plugin-only, no dependencies.",
   "keywords": [
     "dsh",
