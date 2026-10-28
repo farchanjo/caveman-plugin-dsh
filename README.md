@@ -1,6 +1,6 @@
 # caveman-plugin-dsh
 
-**Caveman voice for [DSH](https://github.com/deepseek-ai/dsh) — terminal and web.**
+**Caveman voice for DSH ([dsh-TUI](https://github.com/ccch1mneyyy/dsh-TUI)) — terminal and web.**
 Why use many token when few token do trick.
 
 A dsh plugin that makes the agent answer terse: fragments over sentences,
