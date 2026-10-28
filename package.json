@@ -1,0 +1,50 @@
+{
+  "name": "caveman-plugin-dsh",
+  "version": "0.2.0",
+  "description": "Caveman voice for DSH (terminal and web): terse replies via bundled skills, a /caveman toggle and a TUI badge. Plugin-only, no dependencies.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "caveman",
+    "terse",
+    "tokens",
+    "cordis"
+  ],
+  "author": "Fabricio Archanjo <farchanjo@gmail.com>",
+  "license": "MIT AND Apache-2.0",
+  "homepage": "https://github.com/farchanjo/caveman-plugin-dsh#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/farchanjo/caveman-plugin-dsh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/farchanjo/caveman-plugin-dsh/issues"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "rules",
+    "dsh-plugin.json",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "LICENSE-Apache",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": "^22.19 || >=24"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

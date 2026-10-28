@@ -1,0 +1,20 @@
+caveman-plugin-dsh
+Copyright (c) 2026 caveman-plugin-dsh authors
+
+This product includes material from the "caveman" project
+(https://github.com/JuliusBrussee/caveman), Copyright (c) Julius Brussee,
+licensed under the Apache License, Version 2.0.
+
+Copied material, unmodified except for the paths they live at:
+
+  skills/caveman/SKILL.md
+  skills/ultracave/SKILL.md
+  skills/megacave/SKILL.md
+  rules/caveman-activate.md
+
+The Apache License 2.0 text is in LICENSE-Apache. The plugin code itself
+(everything else in this package) is licensed under the MIT License, see
+LICENSE. The combined work is therefore "MIT AND Apache-2.0".
+
+The caveman project also ships a "Caveman" word mark; it is used here only to
+identify the origin of the ported skills.

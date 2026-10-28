@@ -1,0 +1,9 @@
+# Bundle patch: insert the caveman plugin as a profile row.
+#
+# `alwaysOn` mirrors the plugin config default (see lib/index.js). The row can
+# be tuned with `dsh plugin` / the /plugin panel; every key here is optional.
+- insert:
+    - id: caveman-plugin-dsh
+      name: 'caveman-plugin-dsh'
+      config:
+        alwaysOn: true
