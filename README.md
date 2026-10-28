@@ -44,6 +44,12 @@ No grants file is needed: no mediated capability and no storage are used.
 | `/caveman on` | apply the voice, badge `caveman on` |
 | `/caveman off` | drop it, badge cleared |
 | `/caveman status` | report the mode |
+| `/caveman ultracave` | on, fragments only |
+| `/caveman megacave` | on, Classical Chinese style |
+
+Spoken phrases work too and do not need a slash: "stop caveman", "normal mode",
+"talk like caveman", "be brief". A loose phrase ("pode voltar ao modo normal?")
+is disambiguated by the decision model before it is acted on.
 
 The skills also self-trigger on phrasing: "talk like caveman", "be brief",
 "less tokens", "caveman mode". `stop caveman` and `normal mode` end it in
@@ -51,6 +57,30 @@ conversation.
 
 State lives in the process: `/caveman off` lasts until restart, and the
 `alwaysOn` config is the boot default.
+
+## Decision model (optional)
+
+Loose phrasing is classified by an OpenRouter model — `typesafe/jev-router` by
+default — before the plugin toggles anything. Deterministic phrases never call
+it; only short messages that mention caveman/brief/normal-mode do.
+
+It fails open: no key, offline, timeout (1.5 s) or junk JSON means the exact
+heuristics still apply and the turn never waits longer than the timeout.
+
+```bash
+export OPENROUTER_API_KEY=sk-or-...
+```
+
+| Key (`config.decision`) | Default | Meaning |
+|---|---|---|
+| `enabled` | `true` | use the model for loose phrasing |
+| `model` | `typesafe/jev-router` | OpenRouter model id |
+| `baseUrl` | `https://openrouter.ai/api/v1` | any OpenAI-compatible endpoint |
+| `apiKey` / `apiKeyEnv` | – / `OPENROUTER_API_KEY` | credential, config wins |
+| `timeoutMs` | `1500` | hard cap per classification |
+
+Privacy: only the candidate message text and the current on/off state leave the
+machine, and only when a candidate is detected.
 
 ## How it works
 
@@ -60,6 +90,7 @@ Three ordinary plugin surfaces, nothing privileged:
 |---|---|
 | `/caveman` command | `ctx.commands.register(...)` — handler returns `{ kind, text }`, never reaches the model |
 | Voice section | `ctx.systemPrompt.section({ text: provider, order: 550 })` — provider returns the rule only when the assembly scope is a root agent (`agents.roots()`), so children get `""` |
+| Spoken toggles | `ctx.on('agent/pre-step', …)` waterfall — sees the user message before the model, toggles, and calls `next()` |
 | `caveman` / `ultracave` / `megacave` skills | `ctx.skills.register(...)`, descriptions parsed from YAML frontmatter; the two deep variants keep `disable-model-invocation: true` |
 
 The rule text is the upstream compiled activation block (`rules/caveman-activate.md`);
@@ -81,6 +112,7 @@ Optional keys in the profile row's `config`:
 | Key | Default | Meaning |
 |---|---|---|
 | `alwaysOn` | `true` | apply the voice on boot |
+| `decision` | see above | decision-model block |
 | `commands` | `true` | register the `/caveman` command |
 | `status` | `true` | show the TUI badge |
 
@@ -90,7 +122,7 @@ Optional keys in the profile row's `config`:
     alwaysOn: false
 ```
 
-`CAVE_DEBUG=1` appends scope decisions to `$TMPDIR/caveman-plugin-dsh.log`.
+`CAVE_DEBUG=1` appends scope/classify decisions to `$TMPDIR/caveman-plugin-dsh.log`.
 
 ## Compatibility
 
