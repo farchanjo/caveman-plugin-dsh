@@ -46,6 +46,10 @@ No grants file is needed: no mediated capability and no storage are used.
 | `/caveman status` | report the mode |
 | `/caveman ultracave` | on, fragments only |
 | `/caveman megacave` | on, Classical Chinese style |
+| `/caveman jev on\|off\|status` | decision layer |
+| `/caveman key <sk-or-…>` · `key` · `key clear` | store/show(masked)/drop the API key |
+| `/caveman model [list\|<id>]` | list or choose the decision model |
+| `/caveman endpoint [<url>\|reset]` | point at any OpenAI-compatible endpoint |
 
 Spoken phrases work too and do not need a slash: "stop caveman", "normal mode",
 "talk like caveman", "be brief". A loose phrase ("pode voltar ao modo normal?")
@@ -60,50 +64,39 @@ State lives in the process: `/caveman off` lasts until restart, and the
 
 ## Decision model (optional)
 
-Loose phrasing is classified by an OpenRouter model — `typesafe/jev-router` by
-default — before the plugin toggles anything. Deterministic phrases never call
-it; only short messages that mention caveman/brief/normal-mode do.
+Loose phrasing is classified before the plugin toggles anything. Deterministic
+phrases never call it; only short messages that mention caveman/brief/normal-mode
+do. The model is chosen by you — `typesafe/jev-router` out of the box, any
+OpenRouter model via `/caveman model`, any OpenAI-compatible endpoint via
+`/caveman endpoint`.
 
 It fails open: no key, offline, timeout (1.5 s) or junk JSON means the exact
 heuristics still apply and the turn never waits longer than the timeout.
 
-```bash
-export OPENROUTER_API_KEY=sk-or-...
+### State file
+
+`~/.config/caveman-plugin-dsh/config.json` — created on first run, directory
+`0700`, file `0600`, atomic writes. It holds the key, the model, the endpoint,
+`jev` on/off, and the voice mode/level, so everything survives a restart.
+
+```json
+{
+  "version": 1,
+  "mode": "on",
+  "level": "caveman",
+  "decision": true,
+  "model": "typesafe/jev-router",
+  "baseUrl": "https://openrouter.ai/api/v1",
+  "apiKey": "sk-or-…"
+}
 ```
 
-| Key (`config.decision`) | Default | Meaning |
-|---|---|---|
-| `enabled` | `true` | use the model for loose phrasing |
-| `model` | `typesafe/jev-router` | OpenRouter model id |
-| `baseUrl` | `https://openrouter.ai/api/v1` | any OpenAI-compatible endpoint |
-| `apiKey` / `apiKeyEnv` | – / `OPENROUTER_API_KEY` | credential, config wins |
-| `timeoutMs` | `1500` | hard cap per classification |
+No environment variable is read. A corrupt file is moved to `config.json.bak-<ts>`
+and regenerated; a file looser than `0600` logs a warning. The key is only ever
+echoed masked.
 
-Privacy: only the candidate message text and the current on/off state leave the
-machine, and only when a candidate is detected.
-
-## How it works
-
-Three ordinary plugin surfaces, nothing privileged:
-
-| Piece | Surface |
-|---|---|
-| `/caveman` command | `ctx.commands.register(...)` — handler returns `{ kind, text }`, never reaches the model |
-| Voice section | `ctx.systemPrompt.section({ text: provider, order: 550 })` — provider returns the rule only when the assembly scope is a root agent (`agents.roots()`), so children get `""` |
-| Spoken toggles | `ctx.on('agent/pre-step', …)` waterfall — sees the user message before the model, toggles, and calls `next()` |
-| `caveman` / `ultracave` / `megacave` skills | `ctx.skills.register(...)`, descriptions parsed from YAML frontmatter; the two deep variants keep `disable-model-invocation: true` |
-
-The rule text is the upstream compiled activation block (`rules/caveman-activate.md`);
-the skills are byte-identical copies. Both are Apache-2.0, see `NOTICE`.
-
-### Why not the decision-event / storage surfaces?
-
-`tui/input` interception and `storage.local` are host-mediated and require a
-verified component identity. The admission loader refuses composition-root
-activations (`mediated capability requires a non-root activation context`), so
-profile rows never get one. Dropping both kept the plugin on plain services and
-made it work unchanged in the web profile, where `tui/input` does not exist at
-all.
+Privacy: the candidate message and the current on/off state are sent to the
+configured endpoint, and only when a candidate is detected.
 
 ## Configuration
 
@@ -111,8 +104,9 @@ Optional keys in the profile row's `config`:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `alwaysOn` | `true` | apply the voice on boot |
-| `decision` | see above | decision-model block |
+| `alwaysOn` | `true` | initial voice mode when the file is first created |
+| `decision.timeoutMs` | `1500` | hard cap per classification |
+| `decision.apiKey` | – | inline key, wins over the file |
 | `commands` | `true` | register the `/caveman` command |
 | `status` | `true` | show the TUI badge |
 
