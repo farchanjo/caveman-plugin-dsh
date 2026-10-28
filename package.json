@@ -1,6 +1,6 @@
 {
   "name": "caveman-plugin-dsh",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Caveman voice for DSH with Jev decision model support (TypeSafe or OpenRouter): terse replies, typed intent toggles, plugin-only.",
   "keywords": [
     "dsh",

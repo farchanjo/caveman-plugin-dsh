@@ -6,4 +6,4 @@
     - id: caveman-plugin-dsh
       name: 'caveman-plugin-dsh'
       config:
-        alwaysOn: true
+        alwaysOn: false
