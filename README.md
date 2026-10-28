@@ -47,7 +47,7 @@ No grants file is needed: no mediated capability and no storage are used.
 
 Type the number; the footer repaints with the new state and nothing is sent to
 the model. `q` closes, any other text closes the menu and goes through as a
-normal message. Prompts (`key`, `endpoint`, model pick) consume the next line
+normal message. Prompts (`key`, model pick) consume the next line
 and stay open on a bad value, showing the reason inline; `c` cancels the prompt.
 The menu expires after 120 s.
 
@@ -57,11 +57,11 @@ The menu expires after 120 s.
 | 2 | voice off | 8 | jev off |
 | 3 | status | 9 | clear key |
 | 4 / 5 / 6 | level caveman / ultracave / megacave | 10 | list models |
-| 11 | set endpoint | 12 | set key |
+| 10 / 11 | provider typesafe / openrouter | 12 | set key |
 
 Direct verbs still work without the menu: `/caveman on`, `/caveman off`,
-`/caveman status`, `/caveman caveman|ultracave|megacave`, `/caveman jev on|off`,
-`/caveman key <k>|clear`, `/caveman model [list|<id>]`, `/caveman endpoint [<url>|reset]`.
+`/caveman status`, `/caveman caveman|ultracave|megacave`, `/caveman jev on|off|<provider>`,
+`/caveman key <k>|clear`, `/caveman model [list|<id>]`.
 
 Spoken phrases work too and never need a slash: "stop caveman", "normal mode",
 "talk like caveman", "be brief". A loose phrase ("pode voltar ao modo normal?")
@@ -72,39 +72,79 @@ survive a restart.
 
 ## Decision model (optional)
 
-Loose phrasing is classified before the plugin toggles anything. Deterministic
-phrases never call it; only short messages that mention caveman/brief/normal-mode
-do. The model is chosen by you — `typesafe/jev-router` out of the box, any
-OpenRouter model via `/caveman model`, any OpenAI-compatible endpoint via
-`/caveman endpoint`.
+Off until you turn it on: `/caveman jev on`. When on, loose phrasing is
+classified by **Jev**, a decision model that returns typed choices with a
+confidence — no text generation and no auxiliary LLM.
 
-It fails open: no key, offline, timeout (1.5 s) or junk JSON means the exact
-heuristics still apply and the turn never waits longer than the timeout.
+Two providers, same wire protocol:
+
+| Provider | Endpoint | Models |
+|---|---|---|
+| `typesafe` (default) | `https://api.typesafe.ai/v1/systemone` | Jev only (`jev-latest`) |
+| `openrouter` | `https://openrouter.ai/api/v1/systemone` | any of the 30 decision models (`/caveman model list`) |
+
+`main` is a third option: the session's own model, via the kernel LLM service,
+no key needed. It is the only path that uses an LLM.
+
+```
+/caveman jev on            # use the current provider
+/caveman jev off           # heuristics only
+/caveman jev typesafe      # switch provider (persisted)
+/caveman jev openrouter
+/caveman jev main          # session model, no key
+```
+
+### Keys and thresholds
+
+Keys live in the state file, never in the environment:
+
+```
+/caveman key typesafe <key>      # save (masked echo)
+/caveman key openrouter <key>
+/caveman key                     # show both, masked
+/caveman key clear typesafe      # drop one
+```
+
+Confidence gates are per provider: `0.70` for TypeSafe, `0.35` for OpenRouter —
+the scales are not comparable across providers or models, so re-tune when you
+switch model. Below the gate the classifier stays silent and heuristics apply.
+
+Every call is capped at 1.5 s (4 s for `main`) and every failure is swallowed:
+offline, 401, 429, timeout or junk JSON never blocks the turn.
+
+Privacy: the candidate message and the on/off state go to the selected
+provider; nothing else. `typesafe`/`openrouter` hit TypeSafe's API (directly or
+through OpenRouter); `main` reuses the session provider.
 
 ### State file
 
 `~/.config/caveman-plugin-dsh/config.json` — created on first run, directory
-`0700`, file `0600`, atomic writes. It holds the key, the model, the endpoint,
+`0700`, file `0600`, atomic writes. It holds keys, provider, models, gates,
 `jev` on/off, and the voice mode/level, so everything survives a restart.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "mode": "on",
   "level": "caveman",
-  "decision": true,
-  "model": "typesafe/jev-router",
-  "baseUrl": "https://openrouter.ai/api/v1",
-  "apiKey": "sk-or-…"
+  "decision": false,
+  "provider": "typesafe",
+  "models": { "typesafe": "jev-latest", "openrouter": "~typesafe/jev-latest" },
+  "keys": { "typesafe": "", "openrouter": "" },
+  "minConfidence": { "typesafe": 0.7, "openrouter": 0.35 }
 }
 ```
 
-No environment variable is read. A corrupt file is moved to `config.json.bak-<ts>`
-and regenerated; a file looser than `0600` logs a warning. The key is only ever
-echoed masked.
+A corrupt file is moved to `config.json.bak-<ts>` and regenerated; a file looser
+than `0600` warns. A version-1 file is migrated (its `apiKey` becomes
+`keys.openrouter`, `decision` resets to `false`).
 
-Privacy: the candidate message and the current on/off state are sent to the
-configured endpoint, and only when a candidate is detected.
+### Why a provider factory?
+
+`lib/decision.js` keeps both providers in one table (base URL, default model,
+gate) and returns a client. The caller never branches; adding a backend is one
+row. `main` stays outside the factory because it has a different transport and
+no real confidence.
 
 ## Configuration
 
@@ -114,7 +154,7 @@ Optional keys in the profile row's `config`:
 |---|---|---|
 | `alwaysOn` | `true` | initial voice mode when the file is first created |
 | `decision.timeoutMs` | `1500` | hard cap per classification |
-| `decision.apiKey` | – | inline key, wins over the file |
+| `decision.apiKey` | – | inline OpenRouter key for CI, wins over the file |
 | `commands` | `true` | register the `/caveman` command |
 | `status` | `true` | show the TUI badge |
 
