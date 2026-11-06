@@ -22,20 +22,19 @@ system-prompt section, a `/caveman` toggle and a TUI badge.
 
 ## Install
 
-Requires dsh 0.17+ (plugin manifest v0.15). Clone, then add it to the profile(s)
-you use:
+Every tagged version ships a packed tarball on the
+[Releases](https://github.com/farchanjo/caveman-plugin-dsh/releases) page:
 
-```bash
-git clone https://github.com/farchanjo/caveman-plugin-dsh.git
-dsh plugin --profile tui add ./caveman-plugin-dsh   # terminal UI
-dsh plugin --profile web add ./caveman-plugin-dsh   # web UI
+```sh
+dsh plugin --profile <profile> add \
+  https://github.com/farchanjo/caveman-plugin-dsh/releases/download/v<version>/caveman-plugin-dsh-<version>.tgz
 ```
 
-Restart dsh afterwards. Remove with `dsh plugin --profile <p> remove caveman-plugin-dsh`.
+Verify the asset against the `.sha256` published beside it before installing.
+Remove with `dsh plugin --profile <profile> remove caveman-plugin-dsh`.
 
-The manifest is validated by the host's own `validatePlugin`; it declares the
-`commands.dsh/v1alpha1#Command` contract and the `commands.invoke` permission.
-No grants file is needed: no mediated capability and no storage are used.
+A git clone works too, for development. The release contract — bump, tag,
+assets, checks — lives in [AGENTS.md](AGENTS.md).
 
 ## Usage
 

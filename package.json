@@ -34,7 +34,8 @@
     "README.md",
     "LICENSE",
     "LICENSE-Apache",
-    "NOTICE"
+    "NOTICE",
+    "AGENTS.md"
   ],
   "engines": {
     "node": "^22.19 || >=24"
